@@ -204,7 +204,8 @@ int main(int argc, const char *argv[])
 
             vector<cv::DMatch> matches;
             string matcherType = "MAT_BF";        // MAT_BF, MAT_FLANN
-            string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
+            // string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
+            string descriptorBaseType = descriptorType.compare("SIFT") == 0? "DES_HOG" : "DES_BINARY";
             string selectorType = "SEL_NN";       // SEL_NN, SEL_KNN
 
             matchDescriptors((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints,
