@@ -133,9 +133,19 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 
 
 // associate a given bounding box with the keypoints it contains
-void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches)
+void clusterKptMatchesWithROI(BoundingBox &prev_BB, BoundingBox &curr_BB, std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches)
 {
-    // ...
+    for (auto it = kptMatches.begin(); it != kptMatches.end(); ++it)
+    {
+        auto& curr_kpt = kptsCurr.at(it->trainIdx);
+        if (!curr_BB.roi.contains(curr_kpt.pt))
+            continue;
+        auto& prev_kpt = kptsPrev.at(it->queryIdx);
+        if (!prev_BB.roi.contains(prev_kpt.pt))
+            continue;
+
+        curr_BB.kptMatches.push_back(*it);
+    }
 }
 
 
@@ -143,9 +153,16 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint
 void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, 
                       std::vector<cv::DMatch> kptMatches, double frameRate, double &TTC, cv::Mat *visImg)
 {
-    // ...
+    
+
+    const double h1 = 0.0;
+    const double h0 = 0.0;
+    const double dt = 1.0 / frameRate;
+    TTC = h1 > h0 ? -dt / (1 - h1/h0) : 99.99; 
 }
 
+
+// Filter/Cluster the pointcloud and compute the minimum distance from the object to ego pose in the x direction
 double computeMinDistanceLidar(std::vector<LidarPoint> &lidarPoints, const double clusterTolerance, const int minSize, const double minR)
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZ>);
@@ -183,6 +200,7 @@ double computeMinDistanceLidar(std::vector<LidarPoint> &lidarPoints, const doubl
     return min_dist;
 }
 
+
 void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
                      std::vector<LidarPoint> &lidarPointsCurr, double frameRate, double &TTC)
 {
@@ -194,7 +212,7 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
     const double curr_dist = computeMinDistanceLidar(lidarPointsCurr, clusterTolerance, minSize, minR);
 
     const double dt = 1.0 / frameRate;
-    TTC = curr_dist * dt / (prev_dist - curr_dist);
+    TTC = (prev_dist - curr_dist) > 0.0 ? curr_dist / (prev_dist - curr_dist) * dt : 99.99;
 }
 
 
