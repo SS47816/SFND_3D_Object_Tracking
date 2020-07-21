@@ -5,6 +5,7 @@
 #include <set>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <pcl/segmentation/extract_clusters.h>
 
 #include "camFusion.hpp"
 #include "dataStructures.h"
@@ -145,28 +146,54 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
     // ...
 }
 
+double computeMinDistanceLidar(std::vector<LidarPoint> &lidarPoints, const double clusterTolerance, const int minSize, const double minR)
+{
+    pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters;
+    
+    // filter out the low reflectivity points
+    for (const auto& pt : lidarPoints)
+    {
+        if (pt.r < minR) continue;
+        input_cloud->push_back(pcl::PointXYZ(pt.x, pt.y, pt.z));
+    }
 
+    // add points to kdTree structure
+    pcl::search::KdTree<pcl::PointXYZ>::Ptr kdTree (new pcl::search::KdTree<pcl::PointXYZ>);
+    kdTree->setInputCloud(input_cloud);
+
+    // perform a euclidean clustering
+    std::vector<pcl::PointIndices> clusters_indices;
+    pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
+    ec.setClusterTolerance(clusterTolerance); 
+    ec.setMinClusterSize(minSize);
+    ec.setSearchMethod(kdTree);
+    ec.setInputCloud(input_cloud);
+    ec.extract(clusters_indices);
+
+    // loop through all points to get the min distance in x direction
+    double min_dist = std::numeric_limits<double>::max();
+    
+    for (auto cluster_indices : clusters_indices)
+    {
+        for (auto index : cluster_indices.indices)
+            min_dist = std::min(min_dist, (double)input_cloud->points[index].x);
+    }
+
+    return min_dist;
+}
 
 void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
                      std::vector<LidarPoint> &lidarPointsCurr, double frameRate, double &TTC)
 {
-    TTC = std::numeric_limits<double>::max();
-    double prev_dist = std::numeric_limits<double>::max();
-    double curr_dist = std::numeric_limits<double>::max();
-
-    const double k_max_sepation = 0.2; // max separation between points
-
+    const double clusterTolerance = 0.2;
+    const int minSize = 5;
+    const double minR = 0.1;
     
-    for (const auto& prev_pt : lidarPointsPrev)
-    {
-        prev_dist = std::min(prev_dist, prev_pt.x);
-    }
-    for (const auto& curr_pt : lidarPointsCurr)
-    {
-        curr_dist = std::min(curr_dist, curr_pt.x);
-    }
+    const double prev_dist = computeMinDistanceLidar(lidarPointsPrev, clusterTolerance, minSize, minR);
+    const double curr_dist = computeMinDistanceLidar(lidarPointsCurr, clusterTolerance, minSize, minR);
 
-    const double dt = 1.0f / frameRate;
+    const double dt = 1.0 / frameRate;
     TTC = curr_dist * dt / (prev_dist - curr_dist);
 }
 
