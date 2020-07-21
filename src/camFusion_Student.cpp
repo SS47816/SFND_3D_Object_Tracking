@@ -153,12 +153,36 @@ void clusterKptMatchesWithROI(BoundingBox &prev_BB, BoundingBox &curr_BB, std::v
 void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, 
                       std::vector<cv::DMatch> kptMatches, double frameRate, double &TTC, cv::Mat *visImg)
 {
-    
+    vector<double> dist_ratios;
 
-    const double h1 = 0.0;
-    const double h0 = 0.0;
+    // loop through all the matches
+    for (auto it1 = kptMatches.begin(); it1 != kptMatches.end(); ++it1)
+    {
+        auto& prev_kpt_1 = kptsPrev.at(it1->queryIdx);
+        auto& curr_kpt_1 = kptsCurr.at(it1->trainIdx);
+
+        for (auto it2 = it1 + 1; it2 != kptMatches.end(); ++it2)
+        {
+            const double k_min_dist = 100.0;
+            
+            auto& prev_kpt_2 = kptsPrev.at(it2->queryIdx);
+            auto& curr_kpt_2 = kptsCurr.at(it2->trainIdx);
+
+            const double prev_dist = cv::norm(prev_kpt_1.pt - prev_kpt_2.pt);
+            const double curr_dist = cv::norm(curr_kpt_1.pt - prev_kpt_2.pt);
+
+            if (prev_dist >= k_min_dist && curr_dist >= k_min_dist)
+            {
+                dist_ratios.emplace_back(curr_dist / prev_dist);
+            }
+        }
+    }
+    
+    std::sort(dist_ratios.begin(), dist_ratios.end());
+    const size_t median_index = std::floor(dist_ratios.size() / 2);
+    const double ratio = dist_ratios[median_index];
     const double dt = 1.0 / frameRate;
-    TTC = h1 > h0 ? -dt / (1 - h1/h0) : 99.99; 
+    TTC = ratio > 1 ? -dt / (1 - ratio) : 99.99; 
 }
 
 
