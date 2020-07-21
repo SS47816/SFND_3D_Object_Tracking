@@ -121,7 +121,7 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 
     // display image
     string windowName = "3D Objects";
-    cv::namedWindow(windowName, 1);
+    cv::namedWindow(windowName, 2);
     cv::imshow(windowName, topviewImg);
 
     if(bWait)
@@ -146,10 +146,28 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
 }
 
 
+
 void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
                      std::vector<LidarPoint> &lidarPointsCurr, double frameRate, double &TTC)
 {
-    // ...
+    TTC = std::numeric_limits<double>::max();
+    double prev_dist = std::numeric_limits<double>::max();
+    double curr_dist = std::numeric_limits<double>::max();
+
+    const double k_max_sepation = 0.2; // max separation between points
+
+    
+    for (const auto& prev_pt : lidarPointsPrev)
+    {
+        prev_dist = std::min(prev_dist, prev_pt.x);
+    }
+    for (const auto& curr_pt : lidarPointsCurr)
+    {
+        curr_dist = std::min(curr_dist, curr_pt.x);
+    }
+
+    const double dt = 1.0f / frameRate;
+    TTC = curr_dist * dt / (prev_dist - curr_dist);
 }
 
 
