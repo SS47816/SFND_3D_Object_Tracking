@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 #include <numeric>
+#include <set>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
@@ -154,5 +155,46 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
 
 void matchBoundingBoxes(std::vector<cv::DMatch> &matches, std::map<int, int> &bbBestMatches, DataFrame &prevFrame, DataFrame &currFrame)
 {
-    // ...
+    std::map<std::pair<int, int>, int> BB_matching_count;
+    for (const auto& match : matches)
+    {
+        const int prev_index = match.queryIdx;
+        const int curr_index = match.trainIdx;
+        const auto& prev_kpt = prevFrame.keypoints[prev_index].pt;
+        const auto& curr_kpt = currFrame.keypoints[curr_index].pt;
+
+        for (const auto& prev_BB : prevFrame.boundingBoxes)
+        {
+            if (!prev_BB.roi.contains(prev_kpt)) 
+                continue;
+            
+            for (const auto& curr_BB : currFrame.boundingBoxes)
+            {
+                if (!curr_BB.roi.contains(curr_kpt)) 
+                    continue;
+                BB_matching_count[std::make_pair(prev_BB.boxID, curr_BB.boxID)]++;
+            }
+        }
+    }
+
+    std::vector<std::pair<std::pair<int, int>, int>> num_matches;
+    for (const auto& match_count : BB_matching_count)
+    {
+        num_matches.emplace_back(match_count);
+    }
+
+    std::sort(num_matches.begin(), num_matches.end(), [](const std::pair<std::pair<int, int>, int>& a, const std::pair<std::pair<int, int>, int>& b)
+    {
+        return a.second > b.second;
+    });
+
+    bbBestMatches.clear();
+    std::set<int> visited_prev_BB;
+    for (const auto& match : num_matches)
+    {
+        if (visited_prev_BB.count(match.first.first))
+            continue;
+        visited_prev_BB.insert(match.first.first);
+        bbBestMatches.insert(match.first);
+    }
 }
