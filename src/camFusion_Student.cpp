@@ -161,6 +161,7 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
         auto& prev_kpt_1 = kptsPrev.at(it1->queryIdx);
         auto& curr_kpt_1 = kptsCurr.at(it1->trainIdx);
 
+        // compoute distances between every points
         for (auto it2 = it1 + 1; it2 != kptMatches.end(); ++it2)
         {
             const double k_min_dist = 100.0;
@@ -178,11 +179,19 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
         }
     }
     
-    std::sort(dist_ratios.begin(), dist_ratios.end());
-    const size_t median_index = std::floor(dist_ratios.size() / 2);
-    const double ratio = dist_ratios[median_index];
-    const double dt = 1.0 / frameRate;
-    TTC = ratio > 1 ? -dt / (1 - ratio) : 99.99; 
+    if (dist_ratios.size() > 0)
+    {
+        std::sort(dist_ratios.begin(), dist_ratios.end());
+        const size_t median_index = std::floor(dist_ratios.size() / 2);
+        const double ratio = dist_ratios[median_index];
+        const double dt = 1.0 / frameRate;
+        TTC = ratio > 1 ? -dt / (1 - ratio) : 99.99;
+    }
+    else
+    {
+        std::cout << "No valid camera-based distance-ratio computed!" << std::endl;
+        TTC = 99.99;
+    }
 }
 
 
