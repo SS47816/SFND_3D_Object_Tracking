@@ -79,13 +79,20 @@ int main(int argc, const char *argv[])
     const std::vector<string> descriptorTypeList{ "BRISK", "BRIEF", "ORB", "FREAK", "AKAZE", "SIFT" };
     const std::vector<std::vector<int>> combo_matrix = 
     {
-        {1, 0, 1, 0, 0, 0}, // {1, 1, 1, 1, 0, 1},
-        {0, 1, 1, 0, 0, 0}, // {1, 1, 1, 1, 0, 1},
-        {0, 0, 1, 0, 0, 1}, // {1, 1, 1, 1, 0, 1},
-        {0, 0, 0, 0, 0, 0}, // {1, 1, 1, 1, 0, 1},
-        {0, 0, 0, 0, 0, 0}, // {1, 1, 1, 1, 0, 1},
-        {0, 0, 0, 0, 0, 0}, // {1, 1, 1, 1, 1, 1},
-        {0, 0, 0, 0, 0, 0}  // {1, 1, 0, 1, 0, 1}
+        {1, 0, 1, 0, 0, 0}, 
+        {0, 1, 0, 0, 0, 0}, 
+        {0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0},
+        {0, 0, 0, 0, 0, 0}
+        // {1, 1, 1, 1, 0, 1},
+        // {1, 1, 1, 1, 0, 1},
+        // {1, 1, 1, 1, 0, 1},
+        // {1, 1, 1, 1, 0, 1},
+        // {1, 1, 1, 1, 0, 1},
+        // {1, 1, 1, 1, 1, 1},
+        // {1, 1, 0, 1, 0, 1},
     };
     // SHITOMASI, HARRIS, FAST, BRISK, ORB, AKAZE, SIFT
     // BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT
@@ -105,6 +112,9 @@ int main(int argc, const char *argv[])
             std::string descriptorType = descriptorTypeList[j];
             std::vector<double> lidar_ttc_log;
             std::vector<double> camera_ttc_log;
+
+            std::cout << "Generating results for " << detectorType 
+                << " + " << descriptorType << "... " << std::endl;
 
             /* MAIN LOOP OVER ALL IMAGES */
             dataBuffer.clear();
@@ -346,6 +356,7 @@ int main(int argc, const char *argv[])
     } // eof loop for all detectors
 
     // print output to .csv file
+    std::cout << "Writing to CSV file..." << std::endl;
     std::ofstream csv;
     csv.open("../TTC_results.csv");
 
@@ -361,24 +372,22 @@ int main(int argc, const char *argv[])
 
     // Write Data to the csv file
     // Loop over time
-    const size_t t_steps = std::min(lidar_ttc_logs.size(), camera_ttc_logs[0].size());
-    for (int t = 0; t < t_steps; t++)
+    for (size_t imgIndex = 0; imgIndex <= imgEndIndex - imgStartIndex; imgIndex+=imgStepWidth)
     {
-        std::string data = std::to_string(t) + "," 
-            + std::to_string(lidar_ttc_logs[t]) + ",";
+        std::string data = std::to_string(imgIndex) + "," 
+            + std::to_string(lidar_ttc_logs[imgIndex]) + ",";
 
         // Loop over all possible combos
         for (int i = 0; i < combo_type_logs.size(); i++)
         {
-            data += std::to_string(camera_ttc_logs[i][t]);
+            data += std::to_string(camera_ttc_logs[i][imgIndex]);
             data += ",";
         }
         data += "\n";
         csv << data;
     }
 
-    
     csv.close();
-
+    std::cout << "Successful!" << std::endl;
     return 0;
 }

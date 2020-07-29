@@ -179,18 +179,33 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
         }
     }
     
+    const double dt = 1.0 / frameRate;
     if (dist_ratios.size() > 0)
     {
         std::sort(dist_ratios.begin(), dist_ratios.end());
-        const size_t median_index = std::floor(dist_ratios.size() / 2);
-        const double ratio = dist_ratios[median_index];
-        const double dt = 1.0 / frameRate;
-        TTC = ratio > 1 ? -dt / (1 - ratio) : 99.99;
+        const int median_index = std::floor(dist_ratios.size() / 2);
+        const double centre_cells_ratio = 0.2;
+        const int num_centre_cells = centre_cells_ratio * dist_ratios.size() / 2;
+        double sum = 0.0;
+        for (int i = median_index - num_centre_cells; i <= median_index + num_centre_cells; ++i)
+            sum += dist_ratios[i];
+        
+        const double ratio = sum / (2*num_centre_cells + 1);
+        
+        // const double ratio = dist_ratios[median_index];
+        // TTC = ratio > 1 ? -dt / (1 - ratio) : 99.99;
+        if (abs(1 - ratio) >= 0.001)
+            TTC = -dt / (1 - ratio);
+        else if ((1 - ratio) >= 0.0)
+            TTC = -dt / 0.001;
+        else
+            TTC = -dt / -0.001;
+        
     }
     else
     {
         // std::cout << "No valid camera-based distance-ratio computed!" << std::endl;
-        TTC = 99.99;
+        TTC = -dt / -0.001;
     }
 }
 
@@ -245,7 +260,13 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
     const double curr_dist = computeMinDistanceLidar(lidarPointsCurr, clusterTolerance, minSize, minR);
 
     const double dt = 1.0 / frameRate;
-    TTC = (prev_dist - curr_dist) > 0.0 ? curr_dist / (prev_dist - curr_dist) * dt : 99.99;
+    // TTC = (prev_dist - curr_dist) > 0.0 ? curr_dist / (prev_dist - curr_dist) * dt : 99.99;
+    if (std::abs(prev_dist - curr_dist) >= 0.001)
+        TTC = curr_dist / (prev_dist - curr_dist) * dt;
+    else if ((prev_dist - curr_dist) >= 0.0)
+        TTC = -dt / 0.001;
+    else
+        TTC = -dt / -0.001;
 }
 
 
