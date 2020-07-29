@@ -108,3 +108,34 @@ The comparison between the Lidar-based TTC and the manually estimated TTC are sh
 
 #### FP.5 Performance Evaluation 2
 
+All combinations of detectors + descriptors are tested and the results are shown in `TTC_results.csv`
+
+An overview is shown below: ![ttc-all](images/ttc-all.png)
+
+**Notes**: 
+
+* The max allowable TTC value is limited to 99.99 to help visual the results better
+* The image sequence selected was between 0-30, since the vehicle motion was too little after `k = 30` causing the estimation of TTC value to be unreliable. 
+
+
+
+Among all the combinations, the difference in result is huge. From the overall result, the top combinations that could produce more reliable result are shown here (in comparison with Lidar): 
+
+![ttc-top](images/ttc-top.png)
+
+
+
+As shown in the figure, the top 6 choices of detector + descriptor combinations are:
+
+![ttc-top-6](images/ttc-top-6.png)
+
+* AKAZE + one of the six descriptors
+
+
+
+However, there are still huge errors in the estimated TTC value due to a variety of factors:
+
+* The inconsistency / low number of matched keypoints on the target vehicle
+* The influence from the change in view angle (as we approaching nearer to the front vehicle, our view point becomes relatively higher and higher)
+* The false positives in matching
+* Outliers keypoints
