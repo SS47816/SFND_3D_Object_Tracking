@@ -90,17 +90,17 @@ The comparison between the Lidar-based TTC and the manually estimated TTC are sh
 
 * At frame 11: There was a disturbance in the Lidar measurement, causing a very short TTC result, which could lead to a sudden brake for the self-driving ego vehicle. 
 
-![lidar-11-cam](/home/ss/ss_ws/SFND_3D_Object_Tracking/images/lidar-11-cam.png)
+![lidar-11-cam](images/lidar-11-cam.png)
 
-![lidar-11-top](/home/ss/ss_ws/SFND_3D_Object_Tracking/images/lidar-11-top.png)
+![lidar-11-top](images/lidar-11-top.png)
 
 ​													Frame 11: Dash cam view and top view
 
 ​	
 
-![lidar-12-cam](/home/ss/ss_ws/SFND_3D_Object_Tracking/images/lidar-12-cam.png)
+![lidar-12-cam](images/lidar-12-cam.png)
 
-![lidar-12-top](/home/ss/ss_ws/SFND_3D_Object_Tracking/images/lidar-12-top.png)
+![lidar-12-top](images/lidar-12-top.png)
 
 ​														Frame 12: Dash cam view and top view
 
