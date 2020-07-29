@@ -189,7 +189,7 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
     }
     else
     {
-        std::cout << "No valid camera-based distance-ratio computed!" << std::endl;
+        // std::cout << "No valid camera-based distance-ratio computed!" << std::endl;
         TTC = 99.99;
     }
 }
